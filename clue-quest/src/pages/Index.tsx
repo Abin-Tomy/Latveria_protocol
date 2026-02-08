@@ -7,7 +7,7 @@ const Index = () => {
 
   useEffect(() => {
     // If already logged in, redirect to game
-    const teamData = sessionStorage.getItem("lockstep_team");
+    const teamData = localStorage.getItem("lockstep_team");
     if (teamData) {
       navigate("/game");
     }

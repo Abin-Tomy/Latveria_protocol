@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { completeGame } from "@/lib/api";
 import { Timer } from "@/components/Timer";
 import { AnswerInput } from "@/components/AnswerInput";
 import ClockPuzzle from "@/components/puzzles/ClockPuzzle";
@@ -72,7 +71,7 @@ const Game = () => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const teamData = sessionStorage.getItem("lockstep_team");
+        const teamData = localStorage.getItem("lockstep_team");
         if (!teamData) {
             navigate("/");
             return;
@@ -90,7 +89,7 @@ const Game = () => {
         // or just local state for now if backend auth is disabled/lenient.
         // setToken(parsed.token); 
 
-        const savedLevel = sessionStorage.getItem("lockstep_level");
+        const savedLevel = localStorage.getItem("lockstep_level");
         let initialLevel = 1;
         if (savedLevel) {
             initialLevel = parseInt(savedLevel);
@@ -142,15 +141,32 @@ const Game = () => {
         setIntelOpen(false);
     }, [currentLevel]);
 
-    // Save completion time to backend when game is completed
+    // Save completion time to localStorage when game is completed
     useEffect(() => {
         if (gameCompleted && teamName) {
             const completionTimeSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
-            completeGame(teamName, completionTimeSeconds).catch(err => {
-                console.error('Failed to save completion time:', err);
-            });
+
+            // Save completion data to localStorage
+            const completionData = {
+                teamName: teamName,
+                teamId: teamId,
+                completionTimeSeconds: completionTimeSeconds,
+                completedAt: new Date().toISOString(),
+                startTime: startTime.toISOString()
+            };
+
+            // Save current completion
+            localStorage.setItem("lockstep_completion", JSON.stringify(completionData));
+
+            // Also append to completion history
+            const history = localStorage.getItem("lockstep_completion_history");
+            const completionHistory = history ? JSON.parse(history) : [];
+            completionHistory.push(completionData);
+            localStorage.setItem("lockstep_completion_history", JSON.stringify(completionHistory));
+
+            console.log('Game completed! Time:', completionTimeSeconds, 'seconds');
         }
-    }, [gameCompleted, teamName, startTime]);
+    }, [gameCompleted, teamName, teamId, startTime]);
 
 
     // Generic wrapper for puzzles that just say "I'm done"
@@ -193,7 +209,7 @@ const Game = () => {
                 setGameCompleted(true);
             } else {
                 setCurrentLevel(nextLevel);
-                sessionStorage.setItem("lockstep_level", nextLevel.toString());
+                localStorage.setItem("lockstep_level", nextLevel.toString());
             }
         }, 3500);
 
@@ -201,8 +217,8 @@ const Game = () => {
     };
 
     const handleLogout = () => {
-        sessionStorage.removeItem("lockstep_team");
-        sessionStorage.removeItem("lockstep_level");
+        localStorage.removeItem("lockstep_team");
+        localStorage.removeItem("lockstep_level");
         navigate("/");
     };
 
@@ -210,7 +226,7 @@ const Game = () => {
         if (currentLevel < TOTAL_LEVELS) {
             const nextLevel = currentLevel + 1;
             setCurrentLevel(nextLevel);
-            sessionStorage.setItem("lockstep_level", nextLevel.toString());
+            localStorage.setItem("lockstep_level", nextLevel.toString());
         } else {
             setGameCompleted(true);
         }
@@ -220,7 +236,7 @@ const Game = () => {
         if (currentLevel > 1) {
             const prevLevel = currentLevel - 1;
             setCurrentLevel(prevLevel);
-            sessionStorage.setItem("lockstep_level", prevLevel.toString());
+            localStorage.setItem("lockstep_level", prevLevel.toString());
         }
     };
 
@@ -228,7 +244,7 @@ const Game = () => {
     if (gameCompleted) {
         return (
             <GameCompletion
-                teamName={sessionStorage.getItem("lockstep_team")}
+                teamName={localStorage.getItem("lockstep_team")}
                 startTime={startTime}
                 onReset={handleLogout}
             />
@@ -573,7 +589,7 @@ const Game = () => {
                                             onSolve={handleGenericSolve}
                                             onWrongAnswer={() => {
                                                 setCurrentLevel(1);
-                                                sessionStorage.setItem("lockstep_level", "1");
+                                                localStorage.setItem("lockstep_level", "1");
                                                 setSuccessDialogue("TIMELINE RESET INITIATED due to incorrect choice.");
                                                 setTimeout(() => setSuccessDialogue(null), 3000);
                                             }}

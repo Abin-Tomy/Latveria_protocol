@@ -17,7 +17,7 @@ const TeamSetup = () => {
 
     // Load saved team data on mount & enforce login
     useEffect(() => {
-        const savedTeam = sessionStorage.getItem("lockstep_team");
+        const savedTeam = localStorage.getItem("lockstep_team");
         if (!savedTeam) {
             // Not logged in -> Redirect to Login
             navigate("/");
@@ -71,17 +71,17 @@ const TeamSetup = () => {
 
         try {
             // Save to session storage (frontend only)
-            const savedTeam = sessionStorage.getItem("lockstep_team");
+            const savedTeam = localStorage.getItem("lockstep_team");
             if (savedTeam) {
                 const parsed = JSON.parse(savedTeam);
                 parsed.agent1 = agent1.trim();
                 parsed.agent2 = agent2.trim();
-                sessionStorage.setItem("lockstep_team", JSON.stringify(parsed));
+                localStorage.setItem("lockstep_team", JSON.stringify(parsed));
 
                 // Also set a separate cookie/item if needed, but session object is enough
             } else {
                 // Fallback if session is missing (shouldn't happen due to useEffect check)
-                sessionStorage.setItem("lockstep_team", JSON.stringify({
+                localStorage.setItem("lockstep_team", JSON.stringify({
                     teamId: teamName,
                     agent1: agent1.trim(),
                     agent2: agent2.trim(),

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/Logo";
 import { Lock, AlertCircle, Loader2 } from "lucide-react";
-import { login, getCsrfToken } from "@/lib/api";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -12,9 +11,18 @@ const Login = () => {
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    // Ensure CSRF cookie is set on mount
+    // Load saved credentials from localStorage on mount
     useEffect(() => {
-        getCsrfToken().catch(console.error);
+        const savedCreds = localStorage.getItem("lockstep_credentials");
+        if (savedCreds) {
+            try {
+                const { teamId: savedTeamId, password: savedPassword } = JSON.parse(savedCreds);
+                setTeamId(savedTeamId || "");
+                setPassword(savedPassword || "");
+            } catch (err) {
+                console.error("Failed to load saved credentials", err);
+            }
+        }
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -27,26 +35,24 @@ const Login = () => {
         setIsLoading(true);
         setError("");
 
-        try {
-            // Call backend login API
-            const data = await login(teamId, password);
+        // Simulate loading delay
+        setTimeout(() => {
+            // Mock authentication - accept any credentials
 
-            if (data.success) {
-                // Store team info in session
-                sessionStorage.setItem("lockstep_team", JSON.stringify({
-                    teamId: data.team.team_id,
-                    currentLevel: data.team.current_level,
-                    startTime: data.team.started_at || new Date().toISOString()
-                }));
-                navigate("/intro");
-            } else {
-                setError(data.error || "Invalid credentials");
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Connection error. Please check if the backend is running.");
-        } finally {
-            setIsLoading(false);
-        }
+            // Save credentials to localStorage for future logins
+            localStorage.setItem("lockstep_credentials", JSON.stringify({
+                teamId: teamId,
+                password: password
+            }));
+
+            // Store team info in localStorage (persists across browser refresh)
+            localStorage.setItem("lockstep_team", JSON.stringify({
+                teamId: teamId,
+                currentLevel: 1,
+                startTime: new Date().toISOString()
+            }));
+            navigate("/intro");
+        }, 500);
     };
 
     return (
