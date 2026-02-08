@@ -135,12 +135,17 @@ if not DEBUG:
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# CORS Settings
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
-CORS_ALLOW_CREDENTIALS = True
+
+# CORS Settings (only needed for local development)
+if DEBUG:
+    CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:8080,http://127.0.0.1:8080').split(',')
+    CORS_ALLOW_CREDENTIALS = True
+else:
+    # Production: frontend and backend are on same domain, no CORS needed
+    CORS_ALLOW_ALL_ORIGINS = False
 
 # CSRF Settings
-CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:8081', 'http://127.0.0.1:8081', 'http://localhost:3000', 'http://127.0.0.1:3000']
+CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'https://*.now.sh', 'http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:8081', 'http://127.0.0.1:8081', 'http://localhost:3000', 'http://127.0.0.1:3000']
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_HTTPONLY = False
 
