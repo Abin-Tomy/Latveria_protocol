@@ -1,0 +1,38 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "backend/lockstep_api/wsgi.py",
+            "use": "@vercel/python",
+            "config": {
+                "maxLambdaSize": "15mb",
+                "runtime": "python3.9"
+            }
+        },
+        {
+            "src": "clue-quest/package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "dist"
+            }
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "backend/lockstep_api/wsgi.py"
+        },
+        {
+            "src": "/static/(.*)",
+            "dest": "backend/lockstep_api/wsgi.py"
+        },
+        {
+            "src": "/media/(.*)",
+            "dest": "backend/lockstep_api/wsgi.py"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/clue-quest/$1"
+        }
+    ]
+}
