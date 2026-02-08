@@ -1,5 +1,6 @@
 // API configuration and service functions
-// API configuration and service functions
+// Backend is only used for team registration
+
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://127.0.0.1:8000';
 
 // Helper to get cookie by name
@@ -38,7 +39,7 @@ export const getCsrfToken = async () => {
   return apiClient('/api/csrf/');
 };
 
-// Login
+// Login/Register
 export const login = async (teamId: string, password: string) => {
   return apiClient('/api/auth/login/', {
     method: 'POST',
@@ -56,22 +57,15 @@ export const logout = async () => {
   });
 };
 
-
-
-// Get current level
-export const getCurrentLevel = async () => {
-  return apiClient('/api/game/level/');
-};
-
-// Submit answer
-export const submitAnswer = async (answer: string) => {
-  return apiClient('/api/game/submit/', {
+// Complete game - save team completion time
+export const completeGame = async (teamId: string, completionTimeSeconds: number) => {
+  return apiClient('/api/complete/', {
     method: 'POST',
-    body: JSON.stringify({ answer }),
+    body: JSON.stringify({
+      team_id: teamId,
+      completion_time_seconds: completionTimeSeconds,
+    }),
   });
 };
 
-// Get team status
-export const getTeamStatus = async () => {
-  return apiClient('/api/game/status/');
-};
+// Game-related API functions removed - game logic is now client-side only

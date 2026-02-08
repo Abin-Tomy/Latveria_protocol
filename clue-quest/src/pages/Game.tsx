@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { completeGame } from "@/lib/api";
 import { Timer } from "@/components/Timer";
 import { AnswerInput } from "@/components/AnswerInput";
 import ClockPuzzle from "@/components/puzzles/ClockPuzzle";
@@ -26,31 +27,29 @@ import { GameCompletion } from "@/components/GameCompletion";
 interface Level {
     id: number;
     title: string;
-    type?: "clock" | "url" | "crossword" | "morse" | "filesystem" | "avengers" | "codecracker" | "still" | "phonekeypad" | "threedoors" | "floorplan" | "video" | "text" | "mcq" | "consequence" | "tpuzzle" | "rotary";
+    type: "clock" | "url" | "crossword" | "morse" | "filesystem" | "avengers" | "codecracker" | "still" | "phonekeypad" | "threedoors" | "floorplan" | "video" | "text" | "mcq" | "consequence" | "tpuzzle" | "rotary";
     content: string;
     hint?: string;
-    targetTime?: string;
-    directions?: string[];
-    // Answer is now hidden in backend
 }
 
-const PUZZLE_TYPES_MAP: Record<number, Level['type']> = {
-    1: "clock",
-    2: "url",
-    3: "morse",
-    4: "video",
-    5: "filesystem",
-    6: "still",
-    7: "mcq",
-    8: "phonekeypad",
-    9: "crossword",
-    10: "floorplan",
-    11: "threedoors",
-    12: "codecracker",
-    13: "tpuzzle",
-    14: "consequence",
-    15: "rotary"
-};
+// Local level data - answers validated client-side in each puzzle component
+const LEVEL_DATA: Level[] = [
+    { id: 1, title: "Temporal Decryption", type: "clock", content: "Synchronize the arrows", hint: "The time shown is the answer" },
+    { id: 2, title: "URL Cipher", type: "url", content: "", hint: "Look closely at the URL" },
+    { id: 3, title: "Morse Transmission", type: "morse", content: "", hint: "Use the Morse code reference" },
+    { id: 4, title: "Video Analysis", type: "video", content: "", hint: "Watch carefully" },
+    { id: 5, title: "Filesystem", type: "filesystem", content: "Tom is in the library. He is reading. Find the book and discover the answer key hidden within the archives.", hint: "Explore the desktop" },
+    { id: 6, title: "Optical Challenge", type: "still", content: "", hint: "Look at the image" },
+    { id: 7, title: "Knowledge Test", type: "mcq", content: "", hint: "Choose wisely" },
+    { id: 8, title: "Phone Keypad", type: "phonekeypad", content: "", hint: "Old school texting" },
+    { id: 9, title: "Crossword", type: "crossword", content: "", hint: "Fill in the blanks" },
+    { id: 10, title: "Floor Plan", type: "floorplan", content: "", hint: "Navigate the building" },
+    { id: 11, title: "Three Doors", type: "threedoors", content: "", hint: "Binary patterns" },
+    { id: 12, title: "Code Cracker", type: "codecracker", content: "", hint: "3 digit code" },
+    { id: 13, title: "T-Puzzle", type: "tpuzzle", content: "", hint: "Form the letter T" },
+    { id: 14, title: "Consequence", type: "consequence", content: "", hint: "Time matters" },
+    { id: 15, title: "Rotary Dial", type: "rotary", content: "", hint: "Dial the number" },
+];
 
 const TOTAL_LEVELS = 15;
 
@@ -69,9 +68,8 @@ const Game = () => {
     const [intelOpen, setIntelOpen] = useState(false);
     const [timeElapsed, setTimeElapsed] = useState(0);
     const [showMorseModal, setShowMorseModal] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [token, setToken] = useState<string | null>(null);
 
     useEffect(() => {
         const teamData = sessionStorage.getItem("lockstep_team");
@@ -101,99 +99,23 @@ const Game = () => {
 
     }, [navigate]);
 
-    const lastRequestedLevel = useRef<number>(0);
-
-    const fetchLevelData = async (levelNumber: number) => {
-        // Prevent race conditions - only process the latest request
-        lastRequestedLevel.current = levelNumber;
-
-        setLoading(true);
-        setLevelData(null); // Clear old data to prevent stale display
-        setError(null);
-        try {
-            // Fetch level details from backend
-            // Note: In development/CORS scenarios, ensure proxy or full URL
-            // Get team_id from session storage for fallback auth
-            const teamData = sessionStorage.getItem("lockstep_team");
-            const parsedTeam = teamData ? JSON.parse(teamData) : null;
-            const currentTeamId = parsedTeam?.teamId || '';
-
-            const response = await fetch(`/api/game/level/?t=${Date.now()}`, {
-                credentials: 'include',
-                headers: {
-                    'X-Team-ID': currentTeamId
-                }
-            });
-
-            // If we've requested a new level since this started, ignore this result
-            if (lastRequestedLevel.current !== levelNumber) {
-                return;
-            }
-
-            if (response.ok) {
-                const data = await response.json();
-
-                // Handle game completed response
-                if (data.game_completed) {
-                    setGameCompleted(true);
-                    setLoading(false);
-                    return;
-                }
-
-                // If backend returns a different level than local state, sync them
-                // But for perceived performance, we trust local state if valid?
-                // Actually, backend is source of truth.
-                if (data.current_level_number !== levelNumber) {
-                    // Update local if mismatched? Or trust requested level?
-                    // Usually we render what the BACKEND says is current.
-                    setCurrentLevel(data.current_level_number);
-                    levelNumber = data.current_level_number;
-                }
-
-                if (levelNumber > TOTAL_LEVELS) {
-                    setGameCompleted(true);
-                    setLoading(false);
-                    return;
-                }
-
-                // Construct level object. 
-                // The backend returns { level: { ... }, ... }
-                // We map it to our frontend Level interface
-                const backendLevel = data.level;
-                const type = PUZZLE_TYPES_MAP[backendLevel.level_number] || "text";
-
-                setLevelData({
-                    id: backendLevel.level_number,
-                    title: backendLevel.title,
-                    type: type,
-                    content: backendLevel.puzzle_content,
-                    hint: backendLevel.hint,
-                });
-            } else {
-                console.error("Failed to fetch level from API");
-                const msg = response.status === 404 ? "LEVEL DATA NOT FOUND" : "CONNECTION REFUSED BY MAINFRAME";
-                setError(msg);
-            }
-        } catch (error) {
-            // If we've requested a new level since this started, ignore this error
-            if (lastRequestedLevel.current !== levelNumber) return;
-
-            console.error("Error fetching level:", error);
-            setError("SECURE CONNECTION FAILED. RETRY?");
-        } finally {
-            if (lastRequestedLevel.current === levelNumber) {
-                setLoading(false);
-            }
+    // Load level data from local LEVEL_DATA array
+    const loadLevelData = useCallback((levelNumber: number) => {
+        if (levelNumber > TOTAL_LEVELS) {
+            setGameCompleted(true);
+            return;
         }
-    };
 
-    // Effect to refresh level data when currentLevel changes
-    // We only trigger this if we explicitly changed level locally and want to fetch DATA for it
+        const level = LEVEL_DATA.find(l => l.id === levelNumber);
+        if (level) {
+            setLevelData(level);
+        }
+    }, []);
+
+    // Effect to load level data when currentLevel changes
     useEffect(() => {
-        if (teamName) { // Ensure initialized
-            fetchLevelData(currentLevel);
-        }
-    }, [currentLevel, teamName]);
+        loadLevelData(currentLevel);
+    }, [currentLevel, loadLevelData]);
 
 
     useEffect(() => {
@@ -220,6 +142,16 @@ const Game = () => {
         setIntelOpen(false);
     }, [currentLevel]);
 
+    // Save completion time to backend when game is completed
+    useEffect(() => {
+        if (gameCompleted && teamName) {
+            const completionTimeSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+            completeGame(teamName, completionTimeSeconds).catch(err => {
+                console.error('Failed to save completion time:', err);
+            });
+        }
+    }, [gameCompleted, teamName, startTime]);
+
 
     // Generic wrapper for puzzles that just say "I'm done"
     const handleGenericSolve = async (solution?: string): Promise<boolean> => {
@@ -237,57 +169,35 @@ const Game = () => {
 
 
 
-    const handleAnswer = async (answer: string): Promise<boolean> => {
-        try {
-            // Get team_id from session storage for fallback auth
-            const teamData = sessionStorage.getItem("lockstep_team");
-            const parsedTeam = teamData ? JSON.parse(teamData) : null;
-            const currentTeamId = parsedTeam?.teamId || '';
+    // Handle successful puzzle completion - all validation done client-side
+    const handleAnswer = async (_answer: string): Promise<boolean> => {
+        // This function is called when a puzzle is solved
+        // The puzzle components handle their own answer validation
+        // This just handles the level progression
 
-            const response = await fetch('/api/game/submit/', {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Team-ID': currentTeamId
-                },
-                body: JSON.stringify({ answer: answer, team_id: currentTeamId })
-            });
+        const messages = [
+            "IMPUDENT FOOL! YOU'VE BYPASSED ONE LAYER, BUT MY MAINFRAME REMAINS ABSOLUTE.",
+            "DO YOU THINK ONE DECRYPTED NODE MAKES YOU AN AGENT? PATHETIC.",
+            "YOU'RE NAVIGATING MY WORLD NOW. DON'T GET COMFORTABLE.",
+            "A MINOR SETBACK. MY SYSTEM HAS BILLIONS OF PROCESSES YOU CANNOT COMPREHEND.",
+            "INCONSIDERABLE PROGRESS. THE DOOMSDAY CLOCK STILL TICKS."
+        ];
+        const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+        setSuccessDialogue(randomMsg);
 
-            const data = await response.json();
-
-            if (data.correct) {
-                // SUCCESS! Show the specific dialogue messages requested by user
-                const messages = [
-                    "IMPUDENT FOOL! YOU'VE BYPASSED ONE LAYER, BUT MY MAINFRAME REMAINS ABSOLUTE.",
-                    "DO YOU THINK ONE DECRYPTED NODE MAKES YOU AN AGENT? PATHETIC.",
-                    "YOU'RE NAVIGATING MY WORLD NOW. DON'T GET COMFORTABLE.",
-                    "A MINOR SETBACK. MY SYSTEM HAS BILLIONS OF PROCESSES YOU CANNOT COMPREHEND.",
-                    "INCONSIDERABLE PROGRESS. THE DOOMSDAY CLOCK STILL TICKS."
-                ];
-                const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-                setSuccessDialogue(randomMsg);
-
-                // Display dialogue for 3.5 seconds before progressing
-                setTimeout(() => {
-                    setSuccessDialogue(null);
-                    if (data.is_completed) {
-                        setGameCompleted(true);
-                    } else {
-                        setCurrentLevel(data.next_level);
-                        sessionStorage.setItem("lockstep_level", data.next_level.toString());
-                        // fetchLevelData called by useEffect on currentLevel change
-                    }
-                }, 3500);
-
-                return true;
+        // Display dialogue for 3.5 seconds before progressing
+        setTimeout(() => {
+            setSuccessDialogue(null);
+            const nextLevel = currentLevel + 1;
+            if (nextLevel > TOTAL_LEVELS) {
+                setGameCompleted(true);
             } else {
-                return false;
+                setCurrentLevel(nextLevel);
+                sessionStorage.setItem("lockstep_level", nextLevel.toString());
             }
-        } catch (e) {
-            console.error("Submission error", e);
-            return false;
-        }
+        }, 3500);
+
+        return true;
     };
 
     const handleLogout = () => {
@@ -296,8 +206,23 @@ const Game = () => {
         navigate("/");
     };
 
+    const handleSkipLevel = () => {
+        if (currentLevel < TOTAL_LEVELS) {
+            const nextLevel = currentLevel + 1;
+            setCurrentLevel(nextLevel);
+            sessionStorage.setItem("lockstep_level", nextLevel.toString());
+        } else {
+            setGameCompleted(true);
+        }
+    };
 
-
+    const handlePreviousLevel = () => {
+        if (currentLevel > 1) {
+            const prevLevel = currentLevel - 1;
+            setCurrentLevel(prevLevel);
+            sessionStorage.setItem("lockstep_level", prevLevel.toString());
+        }
+    };
 
 
     if (gameCompleted) {
@@ -323,7 +248,7 @@ const Game = () => {
             <div className="h-screen bg-black text-red-500 font-mono flex flex-col items-center justify-center gap-4 p-4 text-center">
                 <div className="text-xl font-bold animate-pulse">ERROR: {error || "DATA CORRUPTION DETECTED"}</div>
                 <button
-                    onClick={() => fetchLevelData(currentLevel)}
+                    onClick={() => loadLevelData(currentLevel)}
                     className="px-4 py-2 border border-red-500 hover:bg-red-500/10 transition-colors uppercase tracking-widest text-sm"
                 >
                     RETRY CONNECTION
@@ -417,6 +342,26 @@ const Game = () => {
                         <div className="mt-auto pt-3 border-t border-primary/10 text-xs flex justify-between text-muted-foreground/50 flex-shrink-0">
                             <span>PROGRESS</span>
                             <span>{Math.round((currentLevel / TOTAL_LEVELS) * 100)}%</span>
+                        </div>
+
+                        {/* Skip / Previous Buttons */}
+                        <div className="flex gap-2 mt-3 flex-shrink-0">
+                            <button
+                                onClick={handlePreviousLevel}
+                                disabled={currentLevel <= 1}
+                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-primary/40 text-[10px] text-primary hover:bg-primary/20 transition-all rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                <SkipBack className="w-3 h-3" />
+                                PREV
+                            </button>
+                            <button
+                                onClick={handleSkipLevel}
+                                disabled={currentLevel >= TOTAL_LEVELS}
+                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-primary/40 text-[10px] text-primary hover:bg-primary/20 transition-all rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                SKIP
+                                <SkipForward className="w-3 h-3" />
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -626,7 +571,12 @@ const Game = () => {
                                     >
                                         <ConsequencePuzzle
                                             onSolve={handleGenericSolve}
-                                            onWrongAnswer={() => { }}
+                                            onWrongAnswer={() => {
+                                                setCurrentLevel(1);
+                                                sessionStorage.setItem("lockstep_level", "1");
+                                                setSuccessDialogue("TIMELINE RESET INITIATED due to incorrect choice.");
+                                                setTimeout(() => setSuccessDialogue(null), 3000);
+                                            }}
                                             level={currentLevel}
                                         />
                                     </motion.div>
@@ -789,16 +739,65 @@ const Game = () => {
                 <AnimatePresence>
                     {successDialogue && (
                         <motion.div
-                            initial={{ opacity: 0, y: 50 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -50 }}
-                            className="fixed inset-x-0 bottom-8 z-50 flex justify-center pointer-events-none"
+                            initial={{ opacity: 0, x: 100 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 100 }}
+                            className="fixed bottom-8 right-8 z-50 flex items-end justify-end p-4 font-mono pointer-events-none"
                         >
-                            <div className="bg-black/90 border border-primary p-6 rounded-lg shadow-[0_0_30px_rgba(0,255,100,0.3)] max-w-2xl text-center">
-                                <h3 className="text-primary font-bold text-sm mb-2 animate-pulse">INCOMING TRANSMISSION...</h3>
-                                <p className="text-white text-xs md:text-sm tracking-wider leading-relaxed font-mono">
-                                    "{successDialogue}"
-                                </p>
+                            <div className="flex flex-col md:flex-row gap-2 items-end max-w-xl">
+                                {/* Message Box */}
+                                <motion.div
+                                    initial={{ x: -50, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: 0.1 }}
+                                    className="flex-1 bg-black border border-green-500 p-4 relative shadow-[0_0_15px_rgba(34,197,94,0.15)] w-full"
+                                >
+                                    {/* Decorative Corner Accents */}
+                                    <div className="absolute top-0 left-0 w-1.5 h-1.5 bg-green-500" />
+                                    <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-green-500" />
+                                    <div className="absolute bottom-0 left-0 w-1.5 h-1.5 bg-green-500" />
+                                    <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-green-500" />
+
+                                    {/* Header */}
+                                    <div className="flex justify-between items-center mb-2 pb-1 border-b border-green-500/30 text-green-500">
+                                        <div className="flex items-center gap-2">
+                                            <Zap className="w-3 h-3 animate-pulse" />
+                                            <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase">
+                                                INCOMING COMM // DR. DOOM
+                                            </span>
+                                        </div>
+                                        <TerminalIcon className="w-3 h-3 opacity-50" />
+                                    </div>
+
+                                    {/* Main Message */}
+                                    <h2 className="text-white text-sm md:text-base font-bold uppercase tracking-widest leading-relaxed mb-3 drop-shadow-md">
+                                        {successDialogue}
+                                    </h2>
+
+                                    {/* Footer */}
+                                    <div className="text-right">
+                                        <span className="text-green-500/50 text-[9px] md:text-[10px] tracking-[0.2em] uppercase animate-pulse">
+                                            ENCRYPTING NEXT LAYER...
+                                        </span>
+                                    </div>
+                                </motion.div>
+
+                                {/* Image Box */}
+                                <motion.div
+                                    initial={{ x: 20, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                    className="w-24 h-24 md:w-32 md:h-32 border border-green-500 bg-black p-1 flex-shrink-0 shadow-[0_0_15px_rgba(34,197,94,0.15)] relative"
+                                >
+                                    <div className="absolute inset-0 bg-green-500/5 z-0" />
+                                    <img
+                                        src="/dr-doom-latest.png"
+                                        alt="Dr. Doom"
+                                        className="w-full h-full object-contain relative z-10"
+                                    />
+                                    {/* Scanline Effect Overlay */}
+                                    <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px] pointer-events-none opacity-20 z-20" />
+                                </motion.div>
                             </div>
                         </motion.div>
                     )}

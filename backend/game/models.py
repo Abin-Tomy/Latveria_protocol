@@ -55,37 +55,4 @@ class Team(AbstractUser):
         return self.team_id
 
 
-class Level(models.Model):
-    """Puzzle levels"""
-    level_number = models.IntegerField(unique=True)
-    title = models.CharField(max_length=200)
-    description = models.TextField()
-    puzzle_content = models.TextField(help_text="Riddle, cipher, or puzzle text")
-    image = models.ImageField(upload_to='puzzles/', blank=True, null=True)
-    answer = models.CharField(max_length=200, help_text="Correct answer (case-insensitive)")
-    hint = models.TextField(blank=True, help_text="Optional hint")
-    is_final_level = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['level_number']
-    
-    def __str__(self):
-        return f"Level {self.level_number}: {self.title}"
-
-
-class Progress(models.Model):
-    """Track team progress through levels"""
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='progress')
-    level = models.ForeignKey(Level, on_delete=models.CASCADE)
-    started_at = models.DateTimeField(auto_now_add=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    attempts = models.IntegerField(default=0)
-    time_taken_seconds = models.IntegerField(null=True, blank=True)
-    
-    class Meta:
-        unique_together = ('team', 'level')
-        ordering = ['started_at']
-    
-    def __str__(self):
-        return f"{self.team.team_id} - Level {self.level.level_number}"
+# Level and Progress models removed - game logic is now client-side only

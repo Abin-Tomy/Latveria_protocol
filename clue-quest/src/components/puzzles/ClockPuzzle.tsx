@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Terminal, Skull, ArrowUp, ArrowRight, ArrowDown, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { submitAnswer } from '@/lib/api';
 
 interface ClockPuzzleProps {
     onCorrectAnswer?: () => void;
@@ -66,52 +65,30 @@ const ClockPuzzle = ({ onCorrectAnswer, onWrongAnswer, onSolve, level = 1 }: Clo
 
     const handleSubmit = async () => {
         if (isSubmitting || isSuccess) return;
-        
+
         setIsSubmitting(true);
-        
+
         // Format the answer as the 4 digit numbers (e.g., "1215")
         const answer = arrowNumbers.join('');
-        
-        // Correct answer is 1215 (12:15)
+
+        // Correct answer is 1215 (12:15) - client-side validation only
         const correctAnswer = '1215';
-        
-        try {
-            // Try backend validation first
-            const response = await submitAnswer(answer);
-            
-            if (response.correct) {
-                setIsSuccess(true);
-                setTimeout(() => {
-                    onCorrectAnswer?.();
-                    onSolve?.('CLOCK_SOLVED');
-                }, 800);
-            } else {
-                setIsShaking(true);
-                setShowDenied(true);
-                setTimeout(() => setIsShaking(false), 500);
-                setTimeout(() => setShowDenied(false), 2000);
-                onWrongAnswer?.();
-            }
-        } catch (error) {
-            // Fallback to local validation if backend fails (demo mode)
-            console.log('Backend unavailable, using local validation');
-            
-            if (answer === correctAnswer) {
-                setIsSuccess(true);
-                setTimeout(() => {
-                    onCorrectAnswer?.();
-                    onSolve?.('CLOCK_SOLVED');
-                }, 800);
-            } else {
-                setIsShaking(true);
-                setShowDenied(true);
-                setTimeout(() => setIsShaking(false), 500);
-                setTimeout(() => setShowDenied(false), 2000);
-                onWrongAnswer?.();
-            }
-        } finally {
-            setIsSubmitting(false);
+
+        if (answer === correctAnswer) {
+            setIsSuccess(true);
+            setTimeout(() => {
+                onCorrectAnswer?.();
+                onSolve?.('CLOCK_SOLVED');
+            }, 800);
+        } else {
+            setIsShaking(true);
+            setShowDenied(true);
+            setTimeout(() => setIsShaking(false), 500);
+            setTimeout(() => setShowDenied(false), 2000);
+            onWrongAnswer?.();
         }
+
+        setIsSubmitting(false);
     };
 
     return (
@@ -135,7 +112,7 @@ const ClockPuzzle = ({ onCorrectAnswer, onWrongAnswer, onSolve, level = 1 }: Clo
                 {/* Puzzle Question */}
                 <div className="space-y-1 flex flex-col">
                     <div className="text-xs uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-2 py-1 border-l-2 border-primary/50 pl-3 bg-primary/5 flex-shrink-0">
-                        <span className="text-primary font-bold text-sm">&gt;</span> 
+                        <span className="text-primary font-bold text-sm">&gt;</span>
                         <span className="text-primary/90 font-semibold">TEMPORAL DECRYPTION CHALLENGE</span>
                     </div>
 
@@ -240,8 +217,8 @@ const ClockPuzzle = ({ onCorrectAnswer, onWrongAnswer, onSolve, level = 1 }: Clo
                                                 'border border-border'
                                             )}
                                         >
-                                            <ArrowUp 
-                                                className="h-6 w-6 md:h-7 md:w-7 text-primary transition-transform duration-200" 
+                                            <ArrowUp
+                                                className="h-6 w-6 md:h-7 md:w-7 text-primary transition-transform duration-200"
                                                 style={{
                                                     transform: `rotate(${directionRotations[direction]}deg)`,
                                                 }}
