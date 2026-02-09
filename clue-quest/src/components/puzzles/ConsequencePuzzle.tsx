@@ -97,8 +97,8 @@ export const ConsequencePuzzle = ({ onSolve, onWrongAnswer, level = 14 }: Conseq
         // Format the time as HH:MM
         const formattedTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
 
-        // Check if the answer is correct (12:15)
-        if (formattedTime === "12:15") {
+        // Check if the answer is correct (02:35)
+        if (formattedTime === "02:35") {
             if (onSolve) {
                 onSolve(formattedTime);
                 setSolved(true);

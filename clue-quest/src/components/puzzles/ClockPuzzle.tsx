@@ -71,8 +71,8 @@ const ClockPuzzle = ({ onCorrectAnswer, onWrongAnswer, onSolve, level = 1 }: Clo
         // Format the answer as the 4 digit numbers (e.g., "1215")
         const answer = arrowNumbers.join('');
 
-        // Correct answer is 1215 (12:15) - client-side validation only
-        const correctAnswer = '1215';
+        // Correct answer is 0235 (02:35) - client-side validation only
+        const correctAnswer = '0235';
 
         if (answer === correctAnswer) {
             setIsSuccess(true);
@@ -120,8 +120,8 @@ const ClockPuzzle = ({ onCorrectAnswer, onWrongAnswer, onSolve, level = 1 }: Clo
                         {/* Text Section */}
                         <div className="text-foreground flex-shrink-0 text-left space-y-2">
                             <div className="space-y-1">
-                                <p className="text-xs md:text-sm font-medium tracking-wide">TIME IS NOT A SUGGESTION. IT IS A SEQUENCE.</p>
-                                <p className="text-xs md:text-sm font-medium tracking-wide">THIS SYSTEM DOES NOT FOLLOW YOUR CLOCK. YOU MUST FOLLOW MINE.</p>
+                                <p className="text-xs md:text-sm font-medium tracking-wide">THIS INTERFACE DOES NOT FOLLOW HUMAN ASSUMPTIONS.</p>
+                                <p className="text-xs md:text-sm font-medium tracking-wide">TRUST THE INSTRUMENT.</p>
                             </div>
                             <div className="pt-1 border-t border-primary/20">
                                 <p className="text-[10px] md:text-xs text-muted-foreground/80 tracking-wider italic">
@@ -167,24 +167,24 @@ const ClockPuzzle = ({ onCorrectAnswer, onWrongAnswer, onSolve, level = 1 }: Clo
                                         );
                                     })}
 
-                                    {/* Hour hand pointing to 12 */}
+                                    {/* Hour hand pointing to 2 (02:00) */}
                                     <line
                                         x1="100"
                                         y1="100"
-                                        x2="100"
-                                        y2="55"
+                                        x2="139"
+                                        y2="77.5"
                                         stroke="currentColor"
                                         strokeWidth="5"
                                         strokeLinecap="round"
                                         className="text-primary"
                                     />
 
-                                    {/* Minute hand pointing to 3 (15 minutes) */}
+                                    {/* Minute hand pointing to 7 (35 minutes) */}
                                     <line
                                         x1="100"
                                         y1="100"
-                                        x2="155"
-                                        y2="100"
+                                        x2="72.5"
+                                        y2="147.6"
                                         stroke="currentColor"
                                         strokeWidth="4"
                                         strokeLinecap="round"

@@ -7,6 +7,7 @@ interface GameCompletionProps {
     teamName: string | null;
     startTime: Date;
     onReset: () => void;
+    onTiebreaker: () => void;
 }
 
 const GlitchText = ({ text }: { text: string }) => {
@@ -19,7 +20,7 @@ const GlitchText = ({ text }: { text: string }) => {
     );
 };
 
-export const GameCompletion = ({ teamName, startTime, onReset }: GameCompletionProps) => {
+export const GameCompletion = ({ teamName, startTime, onReset, onTiebreaker }: GameCompletionProps) => {
     const [timeTaken, setTimeTaken] = useState("");
     const [showContent, setShowContent] = useState(false);
     const [displayTeamName, setDisplayTeamName] = useState("");
@@ -221,7 +222,7 @@ export const GameCompletion = ({ teamName, startTime, onReset }: GameCompletionP
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 2.1 }}
-                            onClick={() => alert("TIE BREAKER PROTOCOL INITIATED")}
+                            onClick={onTiebreaker}
                             className="flex-1 group relative px-3 py-2 bg-red-500/10 border border-red-500/50 text-red-500 font-bold text-xs md:text-sm tracking-wider hover:bg-red-500/20 transition-all rounded shadow-[0_0_20px_rgba(239,68,68,0.2)] hover:shadow-[0_0_40px_rgba(239,68,68,0.4)] hover:scale-105 active:scale-95"
                         >
                             <span className="flex items-center gap-1.5 relative z-10 justify-center">

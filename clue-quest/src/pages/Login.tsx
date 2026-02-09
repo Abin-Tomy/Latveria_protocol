@@ -56,7 +56,7 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
             {/* Background effects */}
             <div className="absolute inset-0 noise opacity-30" />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/50" />

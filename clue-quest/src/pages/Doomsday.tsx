@@ -65,16 +65,16 @@ const Doomsday = () => {
                         {/* Timer Section */}
                         <div className="mt-2 space-y-2">
                             <p className="text-[8px] md:text-[10px] tracking-widest text-muted-foreground uppercase">Doomsday Clock Active</p>
-                            <div className="flex items-center justify-center gap-2 md:gap-4 text-2xl md:text-4xl text-primary drop-shadow-[0_4px_0_rgba(0,0,0,0.5)]">
-                                <div className="bg-black/80 border-2 border-primary p-3 rounded shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
+                            <div className="flex items-center justify-center gap-2 md:gap-3 text-xl md:text-2xl text-primary drop-shadow-[0_4px_0_rgba(0,0,0,0.5)]">
+                                <div className="bg-black/80 border-2 border-primary p-2 rounded shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
                                     03
                                 </div>
                                 <span className="text-white animate-pulse">:</span>
-                                <div className="bg-black/80 border-2 border-primary p-3 rounded shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
+                                <div className="bg-black/80 border-2 border-primary p-2 rounded shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
                                     00
                                 </div>
                                 <span className="text-white animate-pulse">:</span>
-                                <div className="bg-black/80 border-2 border-primary p-3 rounded shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
+                                <div className="bg-black/80 border-2 border-primary p-2 rounded shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
                                     00
                                 </div>
                             </div>
@@ -90,18 +90,25 @@ const Doomsday = () => {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 }}
-                            className="bg-background/90 border-4 border-primary p-4 md:p-6 rounded-lg max-w-xl mt-2 text-left relative shadow-[6px_6px_0_rgba(0,0,0,0.5)]"
+                            className="bg-background/90 border-2 border-primary p-3 md:p-4 rounded-lg max-w-lg mt-2 text-left relative shadow-[4px_4px_0_rgba(0,0,0,0.5)]"
                         >
-                            <div className="flex items-center gap-2 mb-2 text-primary text-[10px] md:text-xs uppercase tracking-widest border-b-2 border-primary/20 pb-2">
+                            <div className="flex items-center gap-2 mb-1 text-primary text-[8px] md:text-[10px] uppercase tracking-widest border-b border-primary/20 pb-1">
                                 <Zap className="w-3 h-3" />
                                 Incoming Transmission
                             </div>
 
-                            <p className="text-foreground leading-relaxed text-[10px] md:text-xs tracking-wide uppercase">
+                            <p className="text-foreground leading-relaxed text-[8px] md:text-[10px] tracking-wide uppercase">
                                 In a classified Marvel timeline, Doctor Doom initiates the Doomsday Protocol.
                                 A global digital lockdown. You are not here to fight Doom.
                                 You are here to escape his system.
                             </p>
+
+                            <div className="mt-2 pt-2 border-t border-primary/20 text-center">
+                                <p className="text-primary font-bold text-[8px] md:text-[10px] tracking-widest animate-pulse">
+                                    #THE DISPLAY IS NOT DECORATIVE.<br />
+                                    IT IS THE KEY.
+                                </p>
+                            </div>
                         </motion.div>
                     </div>
                 </div>

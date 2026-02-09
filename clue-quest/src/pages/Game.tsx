@@ -20,26 +20,27 @@ import { MCQPuzzle } from "@/components/puzzles/MCQPuzzle";
 import { ConsequencePuzzle } from "@/components/puzzles/ConsequencePuzzle";
 import { TPuzzle } from "@/components/puzzles/TPuzzle";
 import { RotaryDialPuzzle } from "@/components/puzzles/RotaryDialPuzzle";
+import MatchstickPuzzle from "@/components/puzzles/MatchstickPuzzle";
 import { LogOut, Shield, Zap, Info, Cpu, Terminal as TerminalIcon, SkipForward, SkipBack, Lightbulb, X } from "lucide-react";
 import { GameCompletion } from "@/components/GameCompletion";
 
 interface Level {
     id: number;
     title: string;
-    type: "clock" | "url" | "crossword" | "morse" | "filesystem" | "avengers" | "codecracker" | "still" | "phonekeypad" | "threedoors" | "floorplan" | "video" | "text" | "mcq" | "consequence" | "tpuzzle" | "rotary";
+    type: "clock" | "url" | "crossword" | "morse" | "filesystem" | "avengers" | "codecracker" | "still" | "phonekeypad" | "threedoors" | "floorplan" | "video" | "text" | "mcq" | "consequence" | "tpuzzle" | "rotary" | "matchstick";
     content: string;
     hint?: string;
 }
 
 // Local level data - answers validated client-side in each puzzle component
 const LEVEL_DATA: Level[] = [
-    { id: 1, title: "Temporal Decryption", type: "clock", content: "Synchronize the arrows", hint: "The time shown is the answer" },
-    { id: 2, title: "URL Cipher", type: "url", content: "", hint: "Look closely at the URL" },
+    { id: 1, title: "Temporal Decryption", type: "clock", content: "Synchronize the arrows", hint: "TRUST YOUR GUTS" },
+    { id: 2, title: "URL Cipher", type: "url", content: "", hint: "SIGNAL EXISTS INSIDE THE NOISE." },
     { id: 3, title: "Morse Transmission", type: "morse", content: "", hint: "Use the Morse code reference" },
-    { id: 4, title: "Video Analysis", type: "video", content: "", hint: "Watch carefully" },
+    { id: 4, title: "Video Analysis", type: "video", content: "", hint: "Sometimes the absence of sound speaks louder than words." },
     { id: 5, title: "Filesystem", type: "filesystem", content: "Tom is in the library. He is reading. Find the book and discover the answer key hidden within the archives.", hint: "Explore the desktop" },
-    { id: 6, title: "Optical Challenge", type: "still", content: "", hint: "Look at the image" },
-    { id: 7, title: "Knowledge Test", type: "mcq", content: "", hint: "Choose wisely" },
+    { id: 6, title: "Optical Challenge", type: "still", content: "", hint: "TRUST YOUR GUTS" },
+    { id: 7, title: "Knowledge Test", type: "mcq", content: "", hint: "Choose wisely and Solve the riddles" },
     { id: 8, title: "Phone Keypad", type: "phonekeypad", content: "", hint: "Old school texting" },
     { id: 9, title: "Crossword", type: "crossword", content: "", hint: "Fill in the blanks" },
     { id: 10, title: "Floor Plan", type: "floorplan", content: "", hint: "Navigate the building" },
@@ -47,7 +48,8 @@ const LEVEL_DATA: Level[] = [
     { id: 12, title: "Code Cracker", type: "codecracker", content: "", hint: "3 digit code" },
     { id: 13, title: "T-Puzzle", type: "tpuzzle", content: "", hint: "Form the letter T" },
     { id: 14, title: "Consequence", type: "consequence", content: "", hint: "Time matters" },
-    { id: 15, title: "Rotary Dial", type: "rotary", content: "", hint: "Dial the number" },
+    { id: 15, title: "Rotary Dial", type: "rotary", content: "", hint: "TRUST YOUR GUTS" },
+    { id: 16, title: "Final Tiebreaker", type: "matchstick", content: "", hint: "Maximization Strategy" },
 ];
 
 const TOTAL_LEVELS = 15;
@@ -56,7 +58,16 @@ const Game = () => {
     const navigate = useNavigate();
     const [currentLevel, setCurrentLevel] = useState(1);
     const [levelData, setLevelData] = useState<Level | null>(null);
-    const [startTime, setStartTime] = useState<Date>(new Date());
+    const [startTime, setStartTime] = useState<Date>(() => {
+        const teamData = localStorage.getItem("lockstep_team");
+        if (teamData) {
+            const parsed = JSON.parse(teamData);
+            if (parsed.startTime) {
+                return new Date(parsed.startTime);
+            }
+        }
+        return new Date();
+    });
     const [teamId, setTeamId] = useState("");
     const [teamName, setTeamName] = useState("");
     const [agent1, setAgent1] = useState("");
@@ -69,6 +80,9 @@ const Game = () => {
     const [showMorseModal, setShowMorseModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showTiebreaker, setShowTiebreaker] = useState(false);
+    const [tiebreakerCompleted, setTiebreakerCompleted] = useState(false);
+    const [tiebreakerAnswer, setTiebreakerAnswer] = useState<string | null>(null);
 
     useEffect(() => {
         const teamData = localStorage.getItem("lockstep_team");
@@ -241,12 +255,222 @@ const Game = () => {
     };
 
 
+    const handleTiebreaker = () => {
+        setGameCompleted(false);
+        setShowTiebreaker(true);
+    };
+
+    const handleTiebreakerSolve = (answer?: string) => {
+        setShowTiebreaker(false);
+        setTiebreakerCompleted(true);
+        setTiebreakerAnswer(answer || null);
+        // Mark tiebreaker as completed in localStorage to prevent going back
+        localStorage.setItem("lockstep_tiebreaker_completed", "true");
+    };
+
+    // Tiebreaker Success Page
+    if (tiebreakerCompleted) {
+        const completionTimeSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+        const hours = Math.floor(completionTimeSeconds / 3600);
+        const minutes = Math.floor((completionTimeSeconds % 3600) / 60);
+        const seconds = completionTimeSeconds % 60;
+        const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        return (
+            <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4 font-mono overflow-hidden">
+                {/* Background Effects */}
+                <div className="absolute inset-0">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/30 via-black to-primary/20" />
+                    <div className="absolute inset-0 opacity-20" style={{
+                        backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0, 255, 100, 0.1) 0%, transparent 50%)'
+                    }} />
+                </div>
+
+                {/* Animated particles/sparkles */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {[...Array(20)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            className="absolute w-1 h-1 bg-primary rounded-full"
+                            initial={{
+                                x: Math.random() * window.innerWidth,
+                                y: Math.random() * window.innerHeight,
+                                opacity: 0
+                            }}
+                            animate={{
+                                y: [null, Math.random() * -200],
+                                opacity: [0, 1, 0]
+                            }}
+                            transition={{
+                                duration: 2 + Math.random() * 2,
+                                repeat: Infinity,
+                                delay: Math.random() * 2
+                            }}
+                        />
+                    ))}
+                </div>
+
+                {/* Success Content */}
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5, type: "spring" }}
+                    className="relative z-10 text-center max-w-2xl mx-auto px-6"
+                >
+                    {/* Trophy/Success Icon */}
+                    <motion.div
+                        initial={{ y: -50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="mb-6"
+                    >
+                        <div className="w-24 h-24 mx-auto bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(234,179,8,0.5)]">
+                            <Shield className="w-12 h-12 text-black" />
+                        </div>
+                    </motion.div>
+
+                    {/* Title */}
+                    <motion.h1
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="text-2xl md:text-4xl font-bold text-primary mb-4 tracking-wider"
+                    >
+                        MISSION COMPLETE
+                    </motion.h1>
+
+                    {/* Subtitle */}
+                    <motion.p
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                        className="text-lg md:text-xl text-yellow-500 mb-8 tracking-wide"
+                    >
+                        TIE-BREAKER CONQUERED
+                    </motion.p>
+
+                    {/* Stats Box */}
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="bg-black/60 border-2 border-primary/30 rounded-xl p-6 mb-8 backdrop-blur-sm"
+                    >
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="text-center">
+                                <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Team</div>
+                                <div className="text-lg text-primary font-bold">{teamName || "UNKNOWN"}</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Total Time</div>
+                                <div className="text-lg text-primary font-bold">{formattedTime}</div>
+                            </div>
+                        </div>
+                        {tiebreakerAnswer && (
+                            <div className="mt-4 pt-4 border-t border-primary/20 text-center">
+                                <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Tiebreaker Answer</div>
+                                <div className="text-lg text-yellow-500 font-bold">{tiebreakerAnswer}</div>
+                            </div>
+                        )}
+                    </motion.div>
+
+                    {/* Victory Message */}
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                        className="text-sm text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed"
+                    >
+                        You have successfully breached all security layers and completed the tie-breaker challenge.
+                        Dr. Doom's mainframe has been neutralized.
+                    </motion.div>
+
+                    {/* Decorative line */}
+                    <motion.div
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ delay: 0.7, duration: 0.5 }}
+                        className="w-32 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mb-8"
+                    />
+
+                    {/* Exit Button */}
+                    <motion.button
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.8 }}
+                        onClick={handleLogout}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-8 py-3 bg-primary/20 hover:bg-primary/30 border-2 border-primary text-primary font-bold uppercase tracking-wider rounded-lg transition-all duration-300"
+                    >
+                        <LogOut className="w-4 h-4 inline-block mr-2" />
+                        Exit Protocol
+                    </motion.button>
+                </motion.div>
+
+                {/* Corner decorations */}
+                <div className="absolute top-8 left-8 w-16 h-16 border-l-2 border-t-2 border-primary/30" />
+                <div className="absolute top-8 right-8 w-16 h-16 border-r-2 border-t-2 border-primary/30" />
+                <div className="absolute bottom-8 left-8 w-16 h-16 border-l-2 border-b-2 border-primary/30" />
+                <div className="absolute bottom-8 right-8 w-16 h-16 border-r-2 border-b-2 border-primary/30" />
+            </div>
+        );
+    }
+
+    // Tiebreaker Fullscreen View
+    if (showTiebreaker) {
+        return (
+            <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4 font-mono overflow-hidden">
+                {/* Background Effects */}
+                <div className="absolute inset-0 opacity-30">
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-black to-yellow-900/20" />
+                </div>
+
+                {/* Header */}
+                <motion.div
+                    initial={{ y: -50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="absolute top-4 left-4 right-4 flex justify-between items-center z-20"
+                >
+                    <div className="flex items-center gap-3">
+                        <Zap className="w-6 h-6 text-yellow-500 animate-pulse" />
+                        <span className="text-yellow-500 font-bold text-lg tracking-wider">TIE-BREAKER PROTOCOL</span>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setShowTiebreaker(false);
+                            setGameCompleted(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 border border-red-500/40 text-red-500 text-xs hover:bg-red-500/20 transition-all rounded"
+                    >
+                        <X className="w-4 h-4" />
+                        ABORT
+                    </button>
+                </motion.div>
+
+                {/* Puzzle Container */}
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="relative z-10 w-full max-w-xl bg-black/80 border-2 border-yellow-500/30 rounded-xl p-6 shadow-[0_0_50px_rgba(234,179,8,0.2)]"
+                >
+                    <MatchstickPuzzle onSolve={handleTiebreakerSolve} />
+                </motion.div>
+
+                {/* Decorative Border Animation */}
+                <div className="absolute inset-4 border border-yellow-500/10 rounded-2xl pointer-events-none" />
+            </div>
+        );
+    }
+
     if (gameCompleted) {
         return (
             <GameCompletion
                 teamName={localStorage.getItem("lockstep_team")}
                 startTime={startTime}
                 onReset={handleLogout}
+                onTiebreaker={handleTiebreaker}
             />
         );
     }
@@ -304,7 +528,7 @@ const Game = () => {
                     <span className="text-[9px] text-muted-foreground/60 tracking-wide hidden md:inline">// V. VON DOOM</span>
                 </div>
 
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-4 md:gap-8">
                     <div className="hidden md:flex items-center gap-2 text-[10px] text-muted-foreground">
                         <Cpu className="w-3 h-3 text-primary" />
                         DOOM MAINFRAME V6.6.6
@@ -358,26 +582,6 @@ const Game = () => {
                         <div className="mt-auto pt-3 border-t border-primary/10 text-xs flex justify-between text-muted-foreground/50 flex-shrink-0">
                             <span>PROGRESS</span>
                             <span>{Math.round((currentLevel / TOTAL_LEVELS) * 100)}%</span>
-                        </div>
-
-                        {/* Skip / Previous Buttons */}
-                        <div className="flex gap-2 mt-3 flex-shrink-0">
-                            <button
-                                onClick={handlePreviousLevel}
-                                disabled={currentLevel <= 1}
-                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-primary/40 text-[10px] text-primary hover:bg-primary/20 transition-all rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                <SkipBack className="w-3 h-3" />
-                                PREV
-                            </button>
-                            <button
-                                onClick={handleSkipLevel}
-                                disabled={currentLevel >= TOTAL_LEVELS}
-                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-primary/40 text-[10px] text-primary hover:bg-primary/20 transition-all rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                SKIP
-                                <SkipForward className="w-3 h-3" />
-                            </button>
                         </div>
                     </div>
                 </section>
@@ -608,6 +812,18 @@ const Game = () => {
                                             onSolve={handleGenericSolve}
                                         />
                                     </motion.div>
+                                ) : currentPuzzleType === "matchstick" ? (
+                                    <motion.div
+                                        key={currentLevel}
+                                        initial={{ opacity: 0, scale: 0.98 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 1.02 }}
+                                        className="flex-1 flex flex-col min-h-0"
+                                    >
+                                        <MatchstickPuzzle
+                                            onSolve={handleGenericSolve}
+                                        />
+                                    </motion.div>
                                 ) : (
                                     <motion.div
                                         key={currentLevel}
@@ -622,7 +838,7 @@ const Game = () => {
                             </AnimatePresence>
 
                             {/* Integrated Answer Area - Only for text puzzles */}
-                            {currentPuzzleType !== "clock" && currentPuzzleType !== "url" && currentPuzzleType !== "crossword" && currentPuzzleType !== "morse" && currentPuzzleType !== "filesystem" && currentPuzzleType !== "avengers" && currentPuzzleType !== "codecracker" && currentPuzzleType !== "still" && currentPuzzleType !== "phonekeypad" && currentPuzzleType !== "threedoors" && currentPuzzleType !== "floorplan" && currentPuzzleType !== "video" && currentPuzzleType !== "mcq" && currentPuzzleType !== "consequence" && currentPuzzleType !== "tpuzzle" && currentPuzzleType !== "rotary" && (
+                            {currentPuzzleType !== "clock" && currentPuzzleType !== "url" && currentPuzzleType !== "crossword" && currentPuzzleType !== "morse" && currentPuzzleType !== "filesystem" && currentPuzzleType !== "avengers" && currentPuzzleType !== "codecracker" && currentPuzzleType !== "still" && currentPuzzleType !== "phonekeypad" && currentPuzzleType !== "threedoors" && currentPuzzleType !== "floorplan" && currentPuzzleType !== "video" && currentPuzzleType !== "mcq" && currentPuzzleType !== "consequence" && currentPuzzleType !== "tpuzzle" && currentPuzzleType !== "rotary" && currentPuzzleType !== "matchstick" && (
                                 <div className="mt-auto space-y-4">
                                     <div className="flex items-center gap-2 text-primary/60 text-[8px]">
                                         <span>{">"} ENTER DECRYPTION KEY...</span>

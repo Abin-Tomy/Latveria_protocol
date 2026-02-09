@@ -132,7 +132,7 @@ export const RotaryDialPuzzle = ({ onSolve }: RotaryDialPuzzleProps) => {
                         <div className="glass-card p-3 md:p-4 rounded-sm flex flex-col gap-3 border border-primary/10">
                             <div className="text-foreground flex-shrink-0 text-left space-y-1">
                                 <p className="text-xs md:text-sm font-medium tracking-wide">
-                                    The vault mechanism is controlled by a 6-cylinder lock. Align the tumblers to form the keyword that grants freedom.
+                                    The exit is locked behind moving parts; only a perfect match grants freedom. What are you seeking?
                                 </p>
                             </div>
                         </div>

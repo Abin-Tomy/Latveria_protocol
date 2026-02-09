@@ -20,7 +20,7 @@ export const MCQPuzzle = ({ onSolve, level = 7 }: MCQPuzzleProps) => {
     const [feedback, setFeedback] = useState("");
     const [solved, setSolved] = useState(false);
 
-    const FINAL_ANSWER = "PHONE"; // The correct answer that proceeds to next level
+    const FINAL_ANSWER = "MOBILE"; // The correct answer that proceeds to next level
     
     // Riddles and answers for each option
     const riddles = {
@@ -33,7 +33,7 @@ export const MCQPuzzle = ({ onSolve, level = 7 }: MCQPuzzleProps) => {
     const answers = {
         1: "MIRROR",
         2: "CANDLE",
-        3: "PHONE",
+        3: "MOBILE",
         4: "REMOTE"
     };
 
@@ -55,7 +55,7 @@ export const MCQPuzzle = ({ onSolve, level = 7 }: MCQPuzzleProps) => {
         const correctAnswer = answers[selectedOption as keyof typeof answers];
 
         if (trimmedAnswer === correctAnswer) {
-            // Only proceed to next level if it's PHONE
+            // Only proceed to next level if it's MOBILE
             if (trimmedAnswer === FINAL_ANSWER) {
                 setFeedback("✓ CORRECT ANSWER!");
                 setSolved(true);
@@ -109,7 +109,7 @@ export const MCQPuzzle = ({ onSolve, level = 7 }: MCQPuzzleProps) => {
                     <div className="glass-card p-3 md:p-4 rounded-sm flex flex-col gap-3 border border-primary/10">
                         {/* Text Section */}
                         <div className="text-foreground flex-shrink-0 text-left space-y-1">
-                            <p className="text-xs md:text-sm font-medium tracking-wide">SOLVE THE RIDDLES TO FIND THE KEY</p>
+                            <p className="text-xs md:text-sm font-medium tracking-wide">Why does this place look perfect but suspicious?</p>
                         </div>
                     </div>
                 </div>

@@ -268,7 +268,7 @@ export const ThreeDoorsPuzzle = ({ onSolve, level = 11 }: ThreeDoorsPuzzleProps)
                         {/* Text Section */}
                         <div className="text-foreground flex-shrink-0 text-left space-y-1">
                             <p className="text-xs md:text-sm font-medium tracking-wide">
-                                Three doors stand before you. Each click advances the binary sequence. Choose your first door wisely—it determines your path to 111. Eight precise clicks will unlock the passage.
+                                Which polygon, known for being the strongest in structures like bridges, reveals the value you need when you count its sides?
                             </p>
                         </div>
                     </div>

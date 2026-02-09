@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import BookReveal from '@/components/BookReveal';
+import ScrambledPaperReveal from '@/components/ScrambledPaperReveal';
 import { AnswerInput } from '@/components/AnswerInput';
 
 // Constants
@@ -72,6 +73,12 @@ const DesktopPuzzle = ({ puzzle, onCorrectAnswer, onWrongAnswer, level = 5 }: De
         startPos: { x: 0, y: 0 }
     });
 
+    const [paperReveal, setPaperReveal] = useState<{ isOpen: boolean; content: string; startPos: { x: number; y: number } }>({
+        isOpen: false,
+        content: '',
+        startPos: { x: 0, y: 0 }
+    });
+
     const libraryRef = useRef<HTMLDivElement>(null);
 
     // Initialize files
@@ -113,7 +120,7 @@ const DesktopPuzzle = ({ puzzle, onCorrectAnswer, onWrongAnswer, level = 5 }: De
     const handleSolve = async (val: string): Promise<boolean> => {
         // Check for 'GATWAY' (from the book) or 'ABIN' (from original puzzle)
         const userAnswer = val.toUpperCase().trim();
-        if (userAnswer === 'GATWAY' || userAnswer === 'ABIN') {
+        if (userAnswer === 'CHRONICLE' || userAnswer === 'CHRONICLE') {
             setSolved(true);
             setFeedback("ARCHIVAL MATCH CONFIRMED. INFORMATION RECOVERED.");
             setTimeout(() => {
@@ -147,21 +154,38 @@ const DesktopPuzzle = ({ puzzle, onCorrectAnswer, onWrongAnswer, level = 5 }: De
         // Specifically in the upper-middle shelves
 
         let clickedZone: ClickZone | null = null;
+        let isPaperReveal = false;
 
         // Target Zone: Navy blue book in the bookshelf
         // Left side bookshelf: X: 0-30%, Navy blue books are around Y: 20-45%
         if (x < 30 && y > 20 && y < 45) {
-            clickedZone = { x, y, w: 0, h: 0, content: 'GATWAY', isTarget: true };
+            clickedZone = { x, y, w: 0, h: 0, content: 'CHRONICLE', isTarget: true };
         }
+
+        // Waste Bin Zone: Bottom Right Corner
+        // Approx X: 85-100%, Y: 70-100%
+        if (x > 80 && y > 60) {
+            clickedZone = { x, y, w: 0, h: 0, content: 'KEY IS NOT HERE', isTarget: false };
+            isPaperReveal = true;
+        }
+
         // No decoy zone - only the navy blue book can be clicked
 
         if (clickedZone) {
-            setBookReveal({
-                isOpen: true,
-                content: clickedZone.content,
-                isTarget: clickedZone.isTarget,
-                startPos: { x: e.clientX, y: e.clientY }
-            });
+            if (isPaperReveal) {
+                setPaperReveal({
+                    isOpen: true,
+                    content: clickedZone.content,
+                    startPos: { x: e.clientX, y: e.clientY }
+                });
+            } else {
+                setBookReveal({
+                    isOpen: true,
+                    content: clickedZone.content,
+                    isTarget: clickedZone.isTarget,
+                    startPos: { x: e.clientX, y: e.clientY }
+                });
+            }
         }
     };
 
@@ -478,6 +502,14 @@ const DesktopPuzzle = ({ puzzle, onCorrectAnswer, onWrongAnswer, level = 5 }: De
                 content={bookReveal.content}
                 isTarget={bookReveal.isTarget}
                 startPos={bookReveal.startPos}
+            />
+
+            {/* Scrambled Paper Reveal Animation */}
+            <ScrambledPaperReveal
+                isOpen={paperReveal.isOpen}
+                onClose={() => setPaperReveal(prev => ({ ...prev, isOpen: false }))}
+                content={paperReveal.content}
+                startPos={paperReveal.startPos}
             />
         </div>
     );
